@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { promisify } from 'node:util';
 import { randomUUID } from 'node:crypto';
 import { exportScale } from './export-plan.ts';
 import {
+  applyAudioLimiter,
   assertNonEmptyExportBytes,
   cancelActiveExportJob,
   cleanupStaleExportFiles,
@@ -161,5 +164,54 @@ const { jobId } = await createGenerationJob(
 trackExportJobController(jobId, controller);
 assert.equal(await cancelActiveExportJob(jobId), true);
 assert.equal(getGenerationJobSnapshot(jobId), undefined);
+
+const execFileAsync = promisify(execFile);
+const limiterDir = await mkdtemp(join(tmpdir(), 'dg01-limiter-verify-'));
+try {
+  const quente = join(limiterDir, 'quente.wav');
+  const limitado = join(limiterDir, 'limitado.wav');
+  // `sine` nesta build do ffmpeg (n9.0.1) nao tem parametro de amplitude --
+  // fica fixo em ~-18 dBFS de pico. Sem ganho extra o sinal nunca chegaria
+  // perto do teto do alimiter (limit=0.891, ~-1.0 dBTP) e o teste passaria
+  // mesmo com a funcao quebrada. +19dB e o suficiente pra estourar 0dBFS
+  // sem achatar o sinal inteiro num quadrado (testado manualmente: +24dB
+  // satura o topo inteiro e mascara o efeito real do limitador).
+  await execFileAsync('ffmpeg', [
+    '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', 'sine=frequency=1000:duration=1',
+    '-af', 'volume=19dB',
+    quente,
+  ]);
+
+  await applyAudioLimiter(quente, limitado);
+
+  const peakDb = async (path: string): Promise<number> => {
+    // `-f null -` com `-af volumedetect` sai com codigo 0 (nao lanca) --
+    // as estatisticas vem no stderr, nao no stdout, entao capturamos os
+    // dois da resolucao normal (mesma armadilha do ffmpeg ja documentada
+    // no Plano 1: "metadata=print do ffmpeg escreve em nivel INFO").
+    const { stdout, stderr } = await execFileAsync('ffmpeg', [
+      '-nostdin', '-hide_banner',
+      '-i', path,
+      '-af', 'volumedetect',
+      '-f', 'null', '-',
+    ], { encoding: 'utf8' });
+    const relatorio = stdout + stderr;
+    const match = relatorio.match(/max_volume:\s*(-?\d+(?:\.\d+)?)\s*dB/);
+    assert.ok(match, `volumedetect deveria reportar max_volume (saida: ${relatorio.slice(-400)})`);
+    return Number(match![1]);
+  };
+
+  const picoEntrada = await peakDb(quente);
+  const picoSaida = await peakDb(limitado);
+  assert.ok(picoEntrada >= -0.5, `entrada deveria estar quente (perto de 0 dBFS), medido ${picoEntrada}dB`);
+  assert.ok(
+    picoSaida <= -0.9,
+    `alimiter deveria trazer o pico real perto do teto -1.0dB (limit=0.891), medido ${picoSaida}dB`,
+  );
+  assert.ok(picoSaida < picoEntrada, 'pico de saida deve ser estritamente menor que o de entrada');
+} finally {
+  await rm(limiterDir, { recursive: true, force: true }).catch(() => {});
+}
 
 console.log('export runtime checks passed');

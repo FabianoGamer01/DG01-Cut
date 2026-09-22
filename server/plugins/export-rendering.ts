@@ -15,6 +15,7 @@ import {
 } from '../../src/export/exportFailure.ts';
 import type { ExportPlan } from './export-plan.ts';
 import {
+  applyAudioLimiter,
   createRenderProgress,
   exportOutputSize,
   finalH264EncoderOutcome,
@@ -60,6 +61,7 @@ export async function renderExportPlan(
 ): Promise<H264EncoderOutcome | undefined> {
   signal?.throwIfAborted();
   const retimed = plan.retimeFps ? `${filepath}.retimed.${plan.media.ext}` : null;
+  const limited = `${filepath}.limited.${plan.media.ext}`;
   let failureStage: ExportFailureStage = 'render';
   try {
     update({ phase: 'preparing', progress: 4, processedFrames: 0, totalFrames: plan.totalFrames });
@@ -99,10 +101,15 @@ export async function renderExportPlan(
       await rename(retimed, filepath);
       signal?.throwIfAborted();
     }
+    failureStage = 'encode';
     update({ phase: 'finalizing', progress: 99, processedFrames: plan.totalFrames });
+    await applyAudioLimiter(filepath, limited, signal);
+    signal?.throwIfAborted();
+    await unlink(filepath).catch(() => {});
+    await rename(limited, filepath);
     return outcome;
   } catch (error) {
-    const cleanupStatus = await cleanupExportOutputs([filepath, retimed]);
+    const cleanupStatus = await cleanupExportOutputs([filepath, retimed, limited]);
     const existing = exportFailureFrom(error);
     if (existing) {
       throw new ExportFailureError({ ...existing, cleanupStatus, targetPath: filepath });

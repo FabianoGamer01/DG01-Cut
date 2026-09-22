@@ -346,6 +346,43 @@ async function retimeH264(
   throw lastError instanceof Error ? lastError : new Error('ffmpeg fps retime failed');
 }
 
+/**
+ * Limita o pico real (true peak) do audio final. Achado real no
+ * dg01-video (Plano 1): `loudnorm linear=true` sozinho so' aplica ganho
+ * constante, sem limitador de verdade -- um transiente mais quente passa
+ * reto e ultrapassa o teto. `alimiter` depois resolve (medido la: -0.25
+ * dBTP -> -1.58 dBTP no mesmo audio real). Este fork nao tem NENHUM
+ * filtro de audio no pipeline de export hoje -- confirmado lendo
+ * render.mjs e export-runtime.ts inteiros.
+ *
+ * `level=false` e obrigatorio aqui: `alimiter` tem "auto level" (makeup
+ * gain) LIGADO por padrao, o que reaplica ganho depois de limitar e pode
+ * devolver o pico pro nivel original -- medido neste checkout com
+ * ffmpeg n9.0.1: com `level` no padrao (true), um sinal que entrava a
+ * 0.0 dBFS saia a 0.0 dBFS de novo (limitador efetivamente inerte);
+ * com `level=false` o mesmo sinal saiu a -1.0 dBFS, batendo o teto
+ * esperado de `limit=0.891` (~-1.0 dBTP).
+ */
+export async function applyAudioLimiter(
+  input: string,
+  output: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  await unlink(output).catch(() => {});
+  try {
+    await runFfmpeg([
+      '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+      '-i', input,
+      '-c:v', 'copy',
+      '-af', 'alimiter=limit=0.891:attack=5:release=50:level=false',
+      output,
+    ], signal);
+  } catch (error) {
+    await unlink(output).catch(() => {});
+    throw error;
+  }
+}
+
 export function finalH264EncoderOutcome(
   rendered: H264EncoderOutcome | undefined,
   retimed: H264EncoderOutcome | undefined,
