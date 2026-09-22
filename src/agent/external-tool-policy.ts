@@ -9,6 +9,10 @@ const READ_ONLY_TOOL_NAMES = new Set([
   'read_captions', 'read_project', 'read_transcript', 'find_transcript',
   'search_media', 'search_stock_media', 'search_fonts', 'analyze_music', 'inspect_music', 'music_edit_plan', 'music_image_plan',
   'read_agent_artifact', 'browse_local_media',
+  // Reads coverage against the session's draft (items the session itself
+  // wrote via edit_item), not the live project. Only calls ctx.getState(),
+  // never mutates -- read-only, same as the other read tools above.
+  'check_momento_coverage',
 ]);
 
 const DRAFT_EDIT_TOOL_NAMES = new Set([
@@ -23,10 +27,6 @@ const DRAFT_EDIT_TOOL_NAMES = new Set([
   // Local-path media import lands assets in the session's pool; the file copy
   // itself is a library write, reviewed in offline-tool-authorization.ts.
   'import_asset', 'import_assets', 'import_folder',
-  // Reads coverage against the session's draft (items the session itself
-  // wrote via edit_item), not the live project -- same category as
-  // edit_item/update_item_props, which also operate via editSessionId.
-  'check_momento_coverage',
 ]);
 
 const SERVER_DIRECT_READ_TOOL_NAMES: Record<string, true> = {
