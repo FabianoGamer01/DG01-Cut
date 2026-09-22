@@ -22,9 +22,11 @@ fim. Toda decisão abaixo se subordina a isso.
    (nunca adivinhe qual faixa é o microfone).
 
 2. **Extrair áudio.** Chame `mcp__dg01-video__extrair_audio` com o
-   `caminho`, os `papeis` que a sondagem devolveu, e um diretório de
-   destino dentro do projeto. Guarde o `envoltorias` do retorno — a
-   próxima etapa precisa dele.
+   `caminho`, os `papeis` que a sondagem devolveu, a `duracao_s` (a
+   mesma `duracao_s` que `sondar_arquivo` devolveu — o parâmetro é
+   obrigatório, chamar sem ele falha), e um diretório de destino dentro
+   do projeto. Guarde o `envoltorias` do retorno — a próxima etapa
+   precisa dele.
 
 3. **Transcrever.** Este fork já tem ASR local próprio — use a
    transcrição que ele produz (não é responsabilidade desta Skill gerar
