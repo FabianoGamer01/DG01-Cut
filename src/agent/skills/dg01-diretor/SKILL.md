@@ -57,7 +57,10 @@ fim. Toda decisão abaixo se subordina a isso.
    ataque, item, mecânica citados). Isso decide a convenção de edição —
    ver seção Rules e `references/generos.md`.
 
-7. **Montar a timeline de verdade.** Abra uma sessão de edição
+7. **Montar a timeline de verdade.** Se este for o primeiro vídeo do
+   projeto, autore a abertura antes do cold open — ver
+   `references/abertura-dg01.md` pros requisitos de cor/marca/duração.
+   Abra uma sessão de edição
    (`begin_edit_session`, `approvalMode: "manual"` por padrão). Para
    cada momento mantido, insira um clipe via `edit_item` (lote `adds`
    de mídia do pool — **sem `name`/`props` no `add` em si**, o schema
