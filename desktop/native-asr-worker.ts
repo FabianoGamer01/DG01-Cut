@@ -34,6 +34,13 @@ import {
 const SAMPLE_RATE = ASR_INFERENCE_CONTRACT.sampleRate;
 const STDERR_LIMIT = 8_000;
 const WHISPER_CLI_TIMEOUT_MS = 45 * 60 * 1000;
+// whisper-server amortizes model load across many short requests, but its decode
+// path measured ~4x slower than whisper-cli's on a single long recording in local
+// benchmarks (2026-09-22, same model/threads) -- likely server.cpp not honoring
+// -t the same way, not a beam-size effect (confirmed by testing -bs 1 -bo 1 at
+// server startup, which barely moved the number). Past this length, go straight
+// to whisper-cli instead of paying for a slow server request first.
+const LONG_SOURCE_SKIP_SERVER_THRESHOLD_S = 600;
 
 interface NativeWorkerData {
   readonly cacheDir: string;
@@ -148,6 +155,11 @@ function runWhisperCli(
       '-ojf',
       '-nt',
       '-of', wavPath,
+      // Greedy decode: local benchmark against a real 2.5h recording (2026-09-22)
+      // measured beam-size 5 (whisper-cli's own default) at ~1x realtime vs ~3.6x
+      // realtime here, with equivalent transcript text on the same audio.
+      '-bs', '1',
+      '-bo', '1',
     ];
     if (!useGpu) args.push('-ng');
     const child: ChildProcess = spawn(requireRuntime().whisperCliPath, args, {
@@ -280,52 +292,67 @@ async function transcribeViaServer(
   return { text, chunks };
 }
 
+async function transcribeViaCli(
+  ggmlPath: string,
+  wavPath: string,
+  language: string,
+  engineBackend: DesktopAsrBackend,
+  signal?: AbortSignal,
+): Promise<{ text: string; chunks: DesktopAsrChunk[]; backend: DesktopAsrBackend }> {
+  let json: WhisperJson;
+  let backend: DesktopAsrBackend = engineBackend;
+  try {
+    const { jsonPath } = await runWhisperCli(ggmlPath, wavPath, language, true, signal);
+    json = JSON.parse(await readFile(jsonPath, 'utf8')) as WhisperJson;
+  } catch (gpuError) {
+    if (engineBackend === 'native-cpu') throw gpuError;
+    const { jsonPath } = await runWhisperCli(ggmlPath, wavPath, language, false, signal);
+    json = JSON.parse(await readFile(jsonPath, 'utf8')) as WhisperJson;
+    backend = 'native-cpu';
+  }
+  const { text, chunks } = whisperTokensToChunks(json.transcription);
+  return { text, chunks, backend };
+}
+
 async function transcribeWithEngine(
   request: DesktopAsrRequest,
   engine: LoadedEngine,
   signal?: AbortSignal,
 ): Promise<DesktopAsrResponse> {
   const samples = await extractPcm(request);
+  const durationS = samples.length / SAMPLE_RATE;
   const dir = await mkdtemp(join(tmpdir(), 'occ-asr-'));
   const wavPath = join(dir, 'input.wav');
   try {
     await writeWav(samples, wavPath);
+    const language = whisperLanguage(request.language);
     // 1. Persistent whisper-server: model loaded once, Metal by default.
-    try {
-      const { text, chunks } = await transcribeViaServer(
-        engine.ggmlPath, wavPath, whisperLanguage(request.language), signal,
-      );
-      return {
-        requestId: request.requestId,
-        backend: engine.backend,
-        text,
-        chunks,
-      };
-    } catch {
-      // 2. whisper-cli spawn fallback (Metal, then CPU).
-      let json: WhisperJson;
-      let backend: DesktopAsrBackend = engine.backend;
+    // Skipped for long sources -- its decode path measured far slower than
+    // whisper-cli's on a single long recording (see the threshold constant above).
+    if (durationS < LONG_SOURCE_SKIP_SERVER_THRESHOLD_S) {
       try {
-        const { jsonPath } = await runWhisperCli(
-          engine.ggmlPath, wavPath, whisperLanguage(request.language), true, signal,
-        );
-        json = JSON.parse(await readFile(jsonPath, 'utf8')) as WhisperJson;
-      } catch (gpuError) {
-        if (engine.backend === 'native-cpu') throw gpuError;
-        const { jsonPath } = await runWhisperCli(
-          engine.ggmlPath, wavPath, whisperLanguage(request.language), false, signal,
-        );
-        json = JSON.parse(await readFile(jsonPath, 'utf8')) as WhisperJson;
-        backend = 'native-cpu';
+        const { text, chunks } = await transcribeViaServer(engine.ggmlPath, wavPath, language, signal);
+        return {
+          requestId: request.requestId,
+          backend: engine.backend,
+          text,
+          chunks,
+        };
+      } catch {
+        // fall through to whisper-cli below
       }
-      const { text, chunks } = whisperTokensToChunks(json.transcription);
-      return {
-        requestId: request.requestId,
-        backend,
-        text,
-        chunks,
-      };
     }
+    // 2. whisper-cli spawn (Metal, then CPU): fallback when the server failed
+    // or was skipped, and the direct path for long sources.
+    const { text, chunks, backend } = await transcribeViaCli(
+      engine.ggmlPath, wavPath, language, engine.backend, signal,
+    );
+    return {
+      requestId: request.requestId,
+      backend,
+      text,
+      chunks,
+    };
   } finally {
     await rm(dir, { recursive: true, force: true }).catch(() => undefined);
   }
