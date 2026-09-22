@@ -23,6 +23,10 @@ const DRAFT_EDIT_TOOL_NAMES = new Set([
   // Local-path media import lands assets in the session's pool; the file copy
   // itself is a library write, reviewed in offline-tool-authorization.ts.
   'import_asset', 'import_assets', 'import_folder',
+  // Reads coverage against the session's draft (items the session itself
+  // wrote via edit_item), not the live project -- same category as
+  // edit_item/update_item_props, which also operate via editSessionId.
+  'check_momento_coverage',
 ]);
 
 const SERVER_DIRECT_READ_TOOL_NAMES: Record<string, true> = {
