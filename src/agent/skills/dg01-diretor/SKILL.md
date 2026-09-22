@@ -185,3 +185,14 @@ completo antes de editar. Resumo: em terror, o silêncio ANTES do susto
 É o conteúdo (cortar destrói); em FPS, é o oposto (cortar sem dó o que
 há entre as mortes); a mesma regra aplicada aos dois estraga um dos
 dois.
+
+**Grade de cor.** Cada gênero tem um preset de grading em
+`references/generos.md` (`builtin:look-dg01-*`, ou nenhum pros gêneros
+sem preset). NÃO é uma decisão por momento — é identidade visual do
+VÍDEO INTEIRO, aplicada uma vez, igual em todos os clipes. Depois de
+identificar o gênero (passo 6) e antes de fechar a sessão (passo 9),
+adicione o efeito a TODO clipe de mídia da timeline num único
+`edit_item` (lote `adds` de `{type:"effect", targetItemId:"<clipe>",
+assetId:"<id do preset>", propertyOverrides:{intensity:1}}`, um item por
+clipe) — nunca só no primeiro ou no mais forte. Se o gênero não tiver
+preset (rpg/sandbox/outro), não adicione efeito nenhum de cor.

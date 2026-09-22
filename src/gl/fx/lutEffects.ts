@@ -16,6 +16,10 @@ import lookRicohGrFrag from './look-ricoh-gr.frag.ts';
 import lookKodakGoldFrag from './look-kodak-gold.frag.ts';
 import lookDisposableFrag from './look-disposable.frag.ts';
 import lookCinestillFrag from './look-cinestill.frag.ts';
+import lookDg01VibranteFrag from './look-dg01-vibrante.frag.ts';
+import lookDg01SombrioFrag from './look-dg01-sombrio.frag.ts';
+import lookDg01AltoContrasteFrag from './look-dg01-alto-contraste.frag.ts';
+import lookDg01QuenteFrag from './look-dg01-quente.frag.ts';
 import type { FxDef } from './uniforms';
 
 // LUTs: camera-log → Rec.709 color transforms. Kept
@@ -197,6 +201,54 @@ export const LUT_EFFECTS: Record<string, FxDef> = {
       { key: 'grain', label: '颗粒', default: 0.09, min: 0, max: 0.4, step: 0.01 },
     ],
   },
+  // ── DG01 genre grades (ports of dg01-video filtros.py CATALOGO; PT-BR
+  //    labels deliberately, not zh — these exist for the dg01-diretor Skill's
+  //    single audience, not the general OpenChatCut library) ──────────────
+  'builtin:look-dg01-vibrante': {
+    id: 'builtin:look-dg01-vibrante',
+    name: 'DG01 Vibrante',
+    desc: 'Cores saturadas, contraste leve — comédia/jogo colorido (dg01-video filtros.py).',
+    frag: lookDg01VibranteFrag,
+    props: [
+      { key: 'intensity', label: 'Intensidade', default: 1, min: 0, max: 1, step: 0.01 },
+      { key: 'contrast', label: 'Contraste', default: 1.08, min: 0.6, max: 1.8, step: 0.02 },
+      { key: 'saturation', label: 'Saturação', default: 1.35, min: 0.4, max: 2, step: 0.02 },
+    ],
+  },
+  'builtin:look-dg01-sombrio': {
+    id: 'builtin:look-dg01-sombrio',
+    name: 'DG01 Sombrio',
+    desc: 'Dessaturado, sombras frias — terror/suspense (dg01-video filtros.py).',
+    frag: lookDg01SombrioFrag,
+    props: [
+      { key: 'intensity', label: 'Intensidade', default: 1, min: 0, max: 1, step: 0.01 },
+      { key: 'contrast', label: 'Contraste', default: 1.12, min: 0.6, max: 1.8, step: 0.02 },
+      { key: 'saturation', label: 'Saturação', default: 0.82, min: 0.2, max: 1.5, step: 0.02 },
+      { key: 'coolShadows', label: 'Sombras frias', default: 1, min: 0, max: 2, step: 0.02 },
+    ],
+  },
+  'builtin:look-dg01-alto-contraste': {
+    id: 'builtin:look-dg01-alto-contraste',
+    name: 'DG01 Alto Contraste',
+    desc: 'Crua e nítida, sem desvio de cor — competitivo/FPS (dg01-video filtros.py).',
+    frag: lookDg01AltoContrasteFrag,
+    props: [
+      { key: 'intensity', label: 'Intensidade', default: 1, min: 0, max: 1, step: 0.01 },
+      { key: 'contrast', label: 'Contraste', default: 1.25, min: 0.6, max: 2, step: 0.02 },
+      { key: 'saturation', label: 'Saturação', default: 1.12, min: 0.4, max: 2, step: 0.02 },
+    ],
+  },
+  'builtin:look-dg01-quente': {
+    id: 'builtin:look-dg01-quente',
+    name: 'DG01 Quente',
+    desc: 'Sombras quentes, aconchegante — exploração/RPG casual. Reservado: nenhum gênero usa por padrão ainda (dg01-video filtros.py).',
+    frag: lookDg01QuenteFrag,
+    props: [
+      { key: 'intensity', label: 'Intensidade', default: 1, min: 0, max: 1, step: 0.01 },
+      { key: 'saturation', label: 'Saturação', default: 1.08, min: 0.4, max: 2, step: 0.02 },
+      { key: 'warmShadows', label: 'Sombras quentes', default: 1, min: 0, max: 2, step: 0.02 },
+    ],
+  },
 };
 export const LUT_ORDER = [
   'builtin:slog3-s709',
@@ -216,6 +268,11 @@ export const LUT_ORDER = [
   'builtin:look-sunset',
   'builtin:look-cyber',
   'builtin:look-bleach',
+  // DG01 genre grades last (own section in the library tab)
+  'builtin:look-dg01-vibrante',
+  'builtin:look-dg01-sombrio',
+  'builtin:look-dg01-alto-contraste',
+  'builtin:look-dg01-quente',
 ] as const;
 export const LUT_IDS = [
   ...LUT_ORDER.filter((id) => id in LUT_EFFECTS),
