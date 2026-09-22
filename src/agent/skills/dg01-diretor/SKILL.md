@@ -57,12 +57,13 @@ fim. Toda decisão abaixo se subordina a isso.
    ataque, item, mecânica citados). Isso decide a convenção de edição —
    ver seção Rules e `references/generos.md`.
 
-7. **Montar a timeline de verdade.** Se este for o primeiro vídeo do
-   projeto, autore a abertura antes do cold open — ver
-   `references/abertura-dg01.md` pros requisitos de cor/marca/duração.
-   Abra uma sessão de edição
-   (`begin_edit_session`, `approvalMode: "manual"` por padrão). Para
-   cada momento mantido, insira um clipe via `edit_item` (lote `adds`
+7. **Montar a timeline de verdade.** Abra uma sessão de edição primeiro
+   (`begin_edit_session`, `approvalMode: "manual"` por padrão). Se este
+   for o primeiro vídeo do projeto, autore a abertura via
+   `create_motion_graphic_from_code` — ver `references/abertura-dg01.md`
+   pros requisitos de cor/marca/duração — e insira ela na timeline
+   (frame 0, antes do cold open) via `edit_item`. Depois, para cada
+   momento mantido, insira um clipe via `edit_item` (lote `adds`
    de mídia do pool — **sem `name`/`props` no `add` em si**, o schema
    real de `edit_item` não aceita isso pra mídia do pool) e, numa
    chamada seguinte de `update_item_props`, nomeie o item `momento:<id>`
@@ -75,17 +76,16 @@ fim. Toda decisão abaixo se subordina a isso.
    de quando usar cada um.
 
 9. **Verificar cobertura antes de fechar.** Chame
-   `check_momento_coverage` com `editSessionId`, `momentoIds` = SÓ os
-   momentos que você decidiu MANTER (score >= barra escolhida), e
-   `descartados` = TODOS os outros — tanto os que ficaram abaixo da
-   barra quanto os que você decidiu não usar por outro motivo. Não
-   deixe nenhum candidato do passo 5 de fora dos dois grupos: um
-   momento que não está em `momentoIds` nem em `descartados` aparece
-   como `faltando` por engano, mesmo tendo sido endereçado de verdade.
-   Se `faltando` vier não-vazio depois disso, aí sim você esqueceu de
-   endereçar algum — volte ao passo 7 antes de continuar. Nunca pule
-   este passo achando que "já terminou" — é exatamente o erro que esta
-   verificação existe pra pegar.
+   `check_momento_coverage` com `editSessionId`, `momentoIds` = TODOS os
+   candidatos do passo 5 (não só os mantidos), e `descartados` = o
+   subconjunto de `momentoIds` que você decidiu não usar — tanto os que
+   ficaram abaixo da barra quanto os que você decidiu não usar por
+   outro motivo. Um momento do passo 5 que você esqueceu de inserir E
+   esqueceu de descartar aparece em `faltando` — é assim que este passo
+   pega esquecimento. Se `faltando` vier não-vazio depois disso, aí sim
+   você esqueceu de endereçar algum — volte ao passo 7 antes de
+   continuar. Nunca pule este passo achando que "já terminou" — é
+   exatamente o erro que esta verificação existe pra pegar.
 
 10. **Fechar a sessão** com `review_edit_session`, resumo curto do que
     foi feito.

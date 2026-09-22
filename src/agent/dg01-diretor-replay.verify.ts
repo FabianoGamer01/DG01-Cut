@@ -1,20 +1,13 @@
-// STATUS (2026-09-22): CORRIGIDO. Este harness achou um gap real de
-// wiring: check_momento_coverage nao estava em READ_ONLY_TOOL_NAMES nem em
-// DRAFT_EDIT_TOOL_NAMES (src/agent/external-tool-policy.ts), entao
-// isExternalDraftTool('check_momento_coverage') = false e
-// ExternalBridgeRuntime.execute tratava a chamada como tool "real" --
-// executava contra this.getContext() (o projeto AO VIVO, sem os edits do
-// draft da sessao) em vez do draft isolado da sessao onde edit_item
-// escreveu os itens "momento:<id>". Isso quebrava exatamente a ordem que
-// SKILL.md do dg01-diretor manda (Passo 9 check_momento_coverage ANTES do
-// Passo 10 review_edit_session): no momento em que o Passo 9 roda, a
-// sessao ainda esta' 'drafting' e o projeto ao vivo nao tem nenhum item.
-// Ver task-4-report.md pro repro completo (console.error de
-// live.getDoc().timelines[0].items === [] logo apos os dois edit_item) e
-// pra secao "Fix (desbloqueio)" com a correcao aplicada. Correcao: acrescentado
-// 'check_momento_coverage' a DRAFT_EDIT_TOOL_NAMES em external-tool-policy.ts
-// (mesma categoria de edit_item/update_item_props, que tambem operam via
-// editSessionId contra o draft).
+// STATUS (2026-09-22): CORRIGIDO. check_momento_coverage esta em
+// READ_ONLY_TOOL_NAMES (src/agent/external-tool-policy.ts) -- nunca muta
+// nada, so' le' via ctx.getState(). READ_ONLY_TOOL_NAMES ainda satisfaz
+// isExternalDraftTool (isExternalReadTool(name) || DRAFT_EDIT_TOOL_NAMES.has
+// (name)), entao a chamada continua rodando contra o draft isolado da
+// sessao (onde edit_item escreveu os itens "momento:<id>"), nao contra o
+// projeto ao vivo. Repro original (rodada 1, ja' resolvida) documentado
+// externamente a este repo em
+// DragonGnome01/.superpowers/sdd/2026-09-22-dg01-cut-diretor-skill/
+// task-4-report.md.
 import assert from 'node:assert/strict';
 import { makeDraft } from '../editor/store';
 import { ExternalBridgeRuntime } from './external-bridge-runtime';

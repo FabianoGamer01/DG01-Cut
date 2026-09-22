@@ -28,6 +28,9 @@ export async function execMomentoRetencaoTool(
 ): Promise<unknown> {
   if (name !== 'check_momento_coverage') return { error: `unknown tool ${name}` };
 
+  // `editSessionId` e obrigatorio no schema mas nao e lido aqui de proposito:
+  // quem despacha a chamada ja escopa `ctx` pra sessao certa antes de chegar
+  // neste handler -- nao e' um bug, e' documentacao dessa suposicao.
   const momentoIds = Array.isArray(args.momentoIds) ? (args.momentoIds as number[]) : [];
   const descartados = new Set(Array.isArray(args.descartados) ? (args.descartados as number[]) : []);
 
