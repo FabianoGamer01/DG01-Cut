@@ -86,3 +86,68 @@ fim. Toda decisão abaixo se subordina a isso.
 
 10. **Fechar a sessão** com `review_edit_session`, resumo curto do que
     foi feito.
+
+## Rules
+
+**Cold open**: marque EXATAMENTE UM momento com papel de gancho — o
+mais forte que funcione sem contexto anterior, não precisa ser o
+primeiro cronológico da gravação. Ele abre o vídeo; o resto segue em
+ordem cronológica depois dele. Nada de preâmbulo, saudação ou "fala
+pessoal" antes do gancho.
+
+**Momentos sem fala valem.** Um momento sem transcrição (algo aconteceu
+na tela sem ninguém comentar — início de batalha, virada, animação) é
+candidato válido — gameplay não é podcast. Julgue pelo contexto falado
+em volta dele.
+
+**Tempo morto é inimigo.** Se um momento não faz rir, não ensina, não
+surpreende e não avança a história, descarte — não force pra "encher"
+a duração alvo. Alterne o tipo de momento: três explicações seguidas
+perdem o público.
+
+**Ênfase visual a cada 30-60 segundos**, senão o olho cansa: um punch-in
+discreto (`transform`/`keyframes` via `edit_item updates` — lembre que
+`x`/`y` são % do canvas, não normalizado 0..1) ou um texto curto.
+
+**Punch-in** esconde um corte ou sublinha uma reação. Use pouco. Foco na
+webcam quando a reação dele é o assunto; foco na ação quando o jogo é.
+Quando o punch-in esconde um corte (não quando só sublinha reação), um
+som "whoosh" quase sempre ajuda — zoom sem som de transição tende a
+parecer mecânico, não proposital.
+
+**Meme** entra como selo num canto, pra sublinhar reação. Use
+pouquíssimo — um a cada vários minutos. Resolva o id via
+`mcp__dg01-video__catalogo_sfx`-style: pra memes, veja se
+`browse_library` do próprio fork (categoria de mídia stock) tem
+equivalente; use o termo de busca em inglês, reconhecível ("surprised
+pikachu", "facepalm", "this is fine"). Sem equivalente, cai pra
+punch-in.
+
+**Som é a ferramenta mais barata.** Resolva sempre via
+`mcp__dg01-video__resolver_sfx` — NUNCA invente um id, a ferramenta
+falha alto se o id não existir, é assim de propósito (não confiar num
+id que "parece certo"). Um "pop" numa revelação ou "whoosh" numa
+transição mudam a percepção de ritmo do trecho inteiro. "whoosh" vale
+pra QUALQUER corte de assunto ou cena, não só o punch-in — troca de
+tópico, fim de explicação, início de outro momento.
+
+**Música** é trilha de fundo CONTÍNUA sob um trecho inteiro (não um
+blip) — resolva via `mcp__dg01-video__resolver_musica`, mesmo cuidado de
+nunca inventar id. Use pra sustentar tensão, mistério ou humor num
+momento que já é forte e se beneficia de clima — NUNCA pra disfarçar um
+momento fraco (isso é papel do corte, não da trilha). Use com moderação:
+trilha o tempo todo cansa tanto quanto legenda o tempo todo.
+
+**Texto** é grafismo, não legenda: no máximo 5 palavras, caixa alta, só
+no momento que merece.
+
+**Card** (painel HUD animado) revela um fato impactante, uma
+estatística, ou marca uma virada ("PRIMEIRO CLUTCH", "RECORDE
+PESSOAL"). Use com menos frequência que texto simples — é mais pesado
+visualmente.
+
+**Convenção por gênero** — ver `references/generos.md` pra detalhe
+completo antes de editar. Resumo: em terror, o silêncio ANTES do susto
+É o conteúdo (cortar destrói); em FPS, é o oposto (cortar sem dó o que
+há entre as mortes); a mesma regra aplicada aos dois estraga um dos
+dois.
