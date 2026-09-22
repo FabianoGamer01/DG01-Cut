@@ -149,5 +149,9 @@ export default {
     executableName: 'openchatcut',
     // Pair with package.json desktopName so desktop environments associate the window with its .desktop entry.
     syncDesktopName: true,
+    // chrome-sandbox ships setuid but owned by the build uid, not root -- mksquashfs runs
+    // unprivileged here and in CI, so this build can never bake in real root ownership.
+    // Without it the AppImage hangs at the zygote fork stage on launch. Run
+    // `npm run desktop:fix-linux-sandbox` (needs sudo) once per build before launching.
   },
 };
