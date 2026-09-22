@@ -41,7 +41,13 @@ const CHILD_ENV_NAMES = [
 // does not help, because the collision is on the name rather than the config source.
 // Keeping a private name makes this turn's server independent of the user's own.
 const MCP_SERVER_NAME = 'openchatcut-builtin';
-const ALLOWED_TOOLS = `mcp__${MCP_SERVER_NAME}__*`;
+const DG01_SIDECAR_NAME = 'dg01-video';
+// O sidecar Python (Plano 1, github.com/FabianoGamer01/dg01-video) roda
+// como servidor MCP stdio local. Caminho absoluto do venv -- "python3"
+// solto resolveria pro Python de sistema, sem o pacote `mcp` instalado
+// (mesma licao do Plano 1, Tarefa 10).
+const DG01_SIDECAR_PYTHON = `${process.env.HOME}/dev/dg01-video/.venv/bin/python3`;
+export const ALLOWED_TOOLS = `mcp__${MCP_SERVER_NAME}__* mcp__${DG01_SIDECAR_NAME}__*`;
 /**
  * The only tools this turn may use are the editor's own MCP tools. Everything
  * the CLI ships that can run code, touch the filesystem or reach the network is
@@ -230,6 +236,11 @@ export function claudeCodeMcpConfig(
           // See server/external-agent/builtin-approval-mode.ts.
           ...(approvalMode ? { 'x-openchatcut-approval-mode': approvalMode } : {}),
         },
+      },
+      [DG01_SIDECAR_NAME]: {
+        type: 'stdio',
+        command: DG01_SIDECAR_PYTHON,
+        args: ['-m', 'dg01video.mcp_server'],
       },
     },
   };

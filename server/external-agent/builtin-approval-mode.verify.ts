@@ -5,7 +5,7 @@ import {
   BUILTIN_CLIENT_HEADER,
   builtinApprovalMode,
 } from './builtin-approval-mode.ts';
-import { claudeCodeMcpConfig } from '../claude-code/turn-runner.ts';
+import { ALLOWED_TOOLS as ALLOWED_TOOLS_FOR_TEST, claudeCodeMcpConfig } from '../claude-code/turn-runner.ts';
 
 function request(headers: Record<string, string | string[]>): IncomingMessage {
   return { headers } as unknown as IncomingMessage;
@@ -87,5 +87,32 @@ assert.equal(builtinApprovalMode(request(autoHeaders)), 'auto',
   'the config the CLI receives round-trips to the mode the server enforces');
 assert.equal(builtinApprovalMode(request(legacy)), null,
   'a run without a declared mode leaves begin_edit_session to the model, as before');
+
+// A ferramenta do sidecar dg01-video precisa aparecer como um SEGUNDO
+// servidor MCP, sem quebrar o servidor "openchatcut-builtin" que já existe.
+function serverNames(config: Record<string, unknown>): string[] {
+  return Object.keys(config.mcpServers as Record<string, unknown>);
+}
+
+const configWithSidecar = claudeCodeMcpConfig('http://127.0.0.1:5199/mcp', 'tok', 'manual');
+assert.deepEqual(
+  serverNames(configWithSidecar).sort(),
+  ['dg01-video', 'openchatcut-builtin'],
+  'o sidecar aparece ao lado do servidor MCP do proprio fork, sem substitui-lo',
+);
+
+const sidecarServer = (configWithSidecar.mcpServers as Record<string, { command: string; args: string[] }>)['dg01-video'];
+assert.equal(
+  sidecarServer.command,
+  `${process.env.HOME}/dev/dg01-video/.venv/bin/python3`,
+  'usa o python do venv, nunca "python3" solto -- resolveria pro sistema sem o pacote mcp instalado',
+);
+assert.deepEqual(sidecarServer.args, ['-m', 'dg01video.mcp_server']);
+
+assert.match(
+  ALLOWED_TOOLS_FOR_TEST,
+  /mcp__dg01-video__\*/,
+  'a allowlist de tools inclui o prefixo do sidecar, senao o agente nunca consegue chamar as tools dele',
+);
 
 console.log('builtin-approval-mode.verify: built-in auto-apply override and third-party isolation passed');
