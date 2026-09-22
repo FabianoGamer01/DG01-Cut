@@ -49,6 +49,7 @@ import { RUN_CODE_TOOL_NAMES, RUN_CODE_TOOL_SCHEMAS } from './tools/schemas/run-
 import { PROBE_TOOL_NAMES, PROBE_TOOL_SCHEMAS } from './tools/schemas/probe-tools';
 import { MULTICAM_TOOL_NAMES, MULTICAM_TOOL_SCHEMAS } from './tools/schemas/multicam-tools';
 import { UNDO_TOOL_NAMES, UNDO_TOOL_SCHEMAS } from './tools/schemas/undo-tools';
+import { MOMENTO_RETENCAO_TOOL_NAMES, MOMENTO_RETENCAO_TOOL_SCHEMAS } from './tools/schemas/momento-retencao-tools';
 import { VERSION_TOOL_NAMES, VERSION_TOOL_SCHEMAS } from './tools/schemas/version-tools';
 import { LAYOUT_TOOL_NAMES, LAYOUT_TOOL_SCHEMAS } from './tools/schemas/layout-tools';
 import { SILENCE_TOOL_NAMES, SILENCE_TOOL_SCHEMAS } from './tools/schemas/silence-tools';
@@ -169,6 +170,8 @@ export const TOOL_SCHEMAS: AgentToolSchema[] = [
   ...MULTICAM_TOOL_SCHEMAS,
   // Undo/redo: undo_last_change / redo_last_change submit history snapshots as normal edits.
   ...UNDO_TOOL_SCHEMAS,
+  // Confere se momentos candidatos (sidecar dg01-video) foram endereçados na timeline ou descartados.
+  ...MOMENTO_RETENCAO_TOOL_SCHEMAS,
   // Named version checkpoints: manage_versions list/save/restore/delete.
   ...VERSION_TOOL_SCHEMAS,
   // Named layouts: apply_layout computes transform+crop for split screen, picture-in-picture, grid, or reset.
@@ -267,6 +270,9 @@ const EXECUTOR_GROUPS: ReadonlyArray<readonly [ReadonlySet<string>, ToolExecutor
     const { execUndoTool } = await import('./tools/undo-tools');
     return (name, _args, ctx) => execUndoTool(name, ctx);
   }],
+  [MOMENTO_RETENCAO_TOOL_NAMES, async () => (
+    await import('./tools/momento-retencao-tools')
+  ).execMomentoRetencaoTool],
   [VERSION_TOOL_NAMES, async () => (await import('./tools/version-tools')).execVersionTool],
   [LAYOUT_TOOL_NAMES, async () => (await import('./tools/layout-tools')).execLayoutTool],
   [SILENCE_TOOL_NAMES, async () => (await import('./tools/silence-tools')).execSilenceTool],
