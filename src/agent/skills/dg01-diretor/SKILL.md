@@ -59,21 +59,30 @@ fim. Toda decisão abaixo se subordina a isso.
 
 7. **Montar a timeline de verdade.** Abra uma sessão de edição
    (`begin_edit_session`, `approvalMode: "manual"` por padrão). Para
-   cada momento mantido, insira um clipe via `edit_item` (lote `adds`),
-   nomeando o item `momento:<id>` (convenção obrigatória — sem isso o
-   passo 9 não funciona). Para cada momento descartado, não insira nada
-   — só lembre o id, ele entra na lista `descartados` do passo 9.
+   cada momento mantido, insira um clipe via `edit_item` (lote `adds`
+   de mídia do pool — **sem `name`/`props` no `add` em si**, o schema
+   real de `edit_item` não aceita isso pra mídia do pool) e, numa
+   chamada seguinte de `update_item_props`, nomeie o item `momento:<id>`
+   (convenção obrigatória — sem isso o passo 9 não funciona, é assim
+   que `check_momento_coverage` encontra o item depois). Para cada
+   momento descartado, não insira nada — só lembre o id, ele entra na
+   lista `descartados` do passo 9.
 
 8. **Aplicar ênfase e elementos**, ver seção Rules abaixo pra critério
    de quando usar cada um.
 
 9. **Verificar cobertura antes de fechar.** Chame
-   `check_momento_coverage` com `editSessionId`, a lista completa de
-   `momentoIds` (todos os candidatos do passo 5, não só os mantidos), e
-   `descartados` (os que você decidiu não usar). Se `faltando` vier
-   não-vazio, você esqueceu de endereçar algum — volte ao passo 7 antes
-   de continuar. Nunca pule este passo achando que "já terminou" —
-   é exatamente o erro que esta verificação existe pra pegar.
+   `check_momento_coverage` com `editSessionId`, `momentoIds` = SÓ os
+   momentos que você decidiu MANTER (score >= barra escolhida), e
+   `descartados` = TODOS os outros — tanto os que ficaram abaixo da
+   barra quanto os que você decidiu não usar por outro motivo. Não
+   deixe nenhum candidato do passo 5 de fora dos dois grupos: um
+   momento que não está em `momentoIds` nem em `descartados` aparece
+   como `faltando` por engano, mesmo tendo sido endereçado de verdade.
+   Se `faltando` vier não-vazio depois disso, aí sim você esqueceu de
+   endereçar algum — volte ao passo 7 antes de continuar. Nunca pule
+   este passo achando que "já terminou" — é exatamente o erro que esta
+   verificação existe pra pegar.
 
 10. **Fechar a sessão** com `review_edit_session`, resumo curto do que
     foi feito.
