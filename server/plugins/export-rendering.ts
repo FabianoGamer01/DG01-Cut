@@ -19,6 +19,7 @@ import {
   createRenderProgress,
   exportOutputSize,
   finalH264EncoderOutcome,
+  resolveAudioLimiterDecision,
   retimeFps,
 } from './export-runtime.ts';
 import type { UpdateGenerationJob } from './generation-jobs.ts';
@@ -103,10 +104,13 @@ export async function renderExportPlan(
     }
     failureStage = 'encode';
     update({ phase: 'finalizing', progress: 99, processedFrames: plan.totalFrames });
-    await applyAudioLimiter(filepath, limited, signal);
-    signal?.throwIfAborted();
-    await unlink(filepath).catch(() => {});
-    await rename(limited, filepath);
+    const limiterDecision = resolveAudioLimiterDecision(plan.format, plan.media.codec);
+    if (limiterDecision.apply) {
+      await applyAudioLimiter(filepath, limited, limiterDecision.audioCodecArgs, signal);
+      signal?.throwIfAborted();
+      await unlink(filepath).catch(() => {});
+      await rename(limited, filepath);
+    }
     return outcome;
   } catch (error) {
     const cleanupStatus = await cleanupExportOutputs([filepath, retimed, limited]);

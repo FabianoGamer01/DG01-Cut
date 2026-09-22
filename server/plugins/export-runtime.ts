@@ -347,12 +347,47 @@ async function retimeH264(
 }
 
 /**
+ * Decide se o passo do limitador de pico roda, e se sim com qual codec de
+ * audio explicito. Achado real da revisao final do Plano 2: a versao
+ * original desta funcao passava `-c:v copy` mas nunca `-c:a`/`-b:a` --
+ * o ffmpeg escolhia o codec padrao do container por conta propria, e um
+ * master ProRes (.mov, audio de entrada pcm_s16le) saia com audio AAC a
+ * ~70kbps depois do limitador: perda real de qualidade num arquivo que
+ * deveria ser lossless. Nunca deixar o container decidir por omissao --
+ * mesmo principio que `retimeFps` ja aplica com seu proprio `-c:a copy`
+ * explicito.
+ *
+ * - format === 'audio' (export so'-audio, ex.: stem mp3/wav): pula o
+ *   limitador inteiro. Limitar um stem isolado e' uma decisao de mixagem
+ *   questionavel que nunca fez parte do contrato deste pipeline -- melhor
+ *   nao aplicar por suposicao do que aplicar errado.
+ * - codec === 'prores' (mezzanine master lossless): forca `-c:a
+ *   pcm_s16le` explicitamente, preservando o contrato lossless do preset.
+ * - qualquer outro video com audio (h264/vp8): copia o audio explicitamente
+ *   (`-c:a copy`) em vez de deixar o container escolher -- audio nesse
+ *   ponto do pipeline ja e' lossy (veio do render), copiar preserva
+ *   exatamente o que entrou sem reencode.
+ */
+export type AudioLimiterDecision =
+  | { apply: false }
+  | { apply: true; audioCodecArgs: string[] };
+
+export function resolveAudioLimiterDecision(
+  format: 'video' | 'audio',
+  codec: string,
+): AudioLimiterDecision {
+  if (format === 'audio') return { apply: false };
+  if (codec === 'prores') return { apply: true, audioCodecArgs: ['-c:a', 'pcm_s16le'] };
+  return { apply: true, audioCodecArgs: ['-c:a', 'copy'] };
+}
+
+/**
  * Limita o pico real (true peak) do audio final. Achado real no
  * dg01-video (Plano 1): `loudnorm linear=true` sozinho so' aplica ganho
  * constante, sem limitador de verdade -- um transiente mais quente passa
  * reto e ultrapassa o teto. `alimiter` depois resolve (medido la: -0.25
  * dBTP -> -1.58 dBTP no mesmo audio real). Este fork nao tem NENHUM
- * filtro de audio no pipeline de export hoje -- confirmado lendo
+ * outro filtro de audio no pipeline de export -- confirmado lendo
  * render.mjs e export-runtime.ts inteiros.
  *
  * `level=false` e obrigatorio aqui: `alimiter` tem "auto level" (makeup
@@ -362,10 +397,16 @@ async function retimeH264(
  * 0.0 dBFS saia a 0.0 dBFS de novo (limitador efetivamente inerte);
  * com `level=false` o mesmo sinal saiu a -1.0 dBFS, batendo o teto
  * esperado de `limit=0.891` (~-1.0 dBTP).
+ *
+ * `audioCodecArgs` e' obrigatorio (nao tem default) de proposito: quem
+ * chama tem que decidir explicitamente via `resolveAudioLimiterDecision`
+ * em vez de deixar esta funcao adivinhar -- exatamente a lacuna que
+ * causou o bug do master ProRes.
  */
 export async function applyAudioLimiter(
   input: string,
   output: string,
+  audioCodecArgs: string[],
   signal?: AbortSignal,
 ): Promise<void> {
   await unlink(output).catch(() => {});
@@ -375,6 +416,7 @@ export async function applyAudioLimiter(
       '-i', input,
       '-c:v', 'copy',
       '-af', 'alimiter=limit=0.891:attack=5:release=50:level=false',
+      ...audioCodecArgs,
       output,
     ], signal);
   } catch (error) {

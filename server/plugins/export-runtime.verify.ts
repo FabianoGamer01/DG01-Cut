@@ -17,6 +17,7 @@ import {
   finalH264EncoderOutcome,
   exportOutputSize,
   promoteExportResult,
+  resolveAudioLimiterDecision,
   resolveMaxActiveExports,
   retimeFps,
   retimeVideoEncodingArgs,
@@ -183,7 +184,7 @@ try {
     quente,
   ]);
 
-  await applyAudioLimiter(quente, limitado);
+  await applyAudioLimiter(quente, limitado, ['-c:a', 'pcm_s16le']);
 
   const peakDb = async (path: string): Promise<number> => {
     // `-f null -` com `-af volumedetect` sai com codigo 0 (nao lanca) --
@@ -212,6 +213,71 @@ try {
   assert.ok(picoSaida < picoEntrada, 'pico de saida deve ser estritamente menor que o de entrada');
 } finally {
   await rm(limiterDir, { recursive: true, force: true }).catch(() => {});
+}
+
+// Contrato de decisao: nunca deixar o container escolher por omissao.
+assert.deepEqual(resolveAudioLimiterDecision('audio', 'mp3'), { apply: false },
+  'export so-audio (stem) pula o limitador em vez de adivinhar um codec');
+assert.deepEqual(resolveAudioLimiterDecision('audio', 'wav'), { apply: false });
+assert.deepEqual(
+  resolveAudioLimiterDecision('video', 'prores'),
+  { apply: true, audioCodecArgs: ['-c:a', 'pcm_s16le'] },
+  'mezzanine ProRes forca PCM explicito -- e exatamente o bug real que virou este ledger',
+);
+assert.deepEqual(
+  resolveAudioLimiterDecision('video', 'h264'),
+  { apply: true, audioCodecArgs: ['-c:a', 'copy'] },
+);
+assert.deepEqual(
+  resolveAudioLimiterDecision('video', 'vp8'),
+  { apply: true, audioCodecArgs: ['-c:a', 'copy'] },
+);
+
+// Regressao real do achado I1 da revisao final: um master ProRes com audio
+// PCM de entrada tem que SAIR com audio PCM, nao AAC. Medido no bug
+// original: `-c:v copy` sem `-c:a`/`-b:a` deixava o encoder padrao do
+// container .mov vencer, e um pcm_s16le de entrada saia como aac a
+// ~70kbps -- perda real de qualidade num arquivo que deveria ser
+// lossless. Este teste usa ffprobe (nao volumedetect) porque o bug e' no
+// CODEC de saida, nao no nivel de audio.
+const proresDir = await mkdtemp(join(tmpdir(), 'dg01-limiter-prores-verify-'));
+try {
+  const masterPcm = join(proresDir, 'master-pcm.mov');
+  const masterLimitado = join(proresDir, 'master-pcm.limited.mov');
+  await execFileAsync('ffmpeg', [
+    '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', 'color=c=black:s=320x240:d=1',
+    '-f', 'lavfi', '-i', 'sine=frequency=1000:duration=1',
+    '-c:v', 'prores_ks', '-profile:v', '3',
+    '-c:a', 'pcm_s16le',
+    masterPcm,
+  ]);
+
+  const audioCodecName = async (path: string): Promise<string> => {
+    const { stdout } = await execFileAsync('ffprobe', [
+      '-v', 'error',
+      '-select_streams', 'a:0',
+      '-show_entries', 'stream=codec_name',
+      '-of', 'default=noprint_wrappers=1:nokey=1',
+      path,
+    ], { encoding: 'utf8' });
+    return stdout.trim();
+  };
+
+  assert.equal(await audioCodecName(masterPcm), 'pcm_s16le', 'fixture de entrada deveria ser PCM');
+
+  const decision = resolveAudioLimiterDecision('video', 'prores');
+  assert.equal(decision.apply, true);
+  if (decision.apply) {
+    await applyAudioLimiter(masterPcm, masterLimitado, decision.audioCodecArgs);
+  }
+
+  const codecSaida = await audioCodecName(masterLimitado);
+  assert.equal(codecSaida, 'pcm_s16le',
+    `master ProRes apos o limitador deveria continuar PCM (lossless), saiu como '${codecSaida}' -- `
+      + 'este e exatamente o bug original: o container .mov escolhendo AAC por omissao');
+} finally {
+  await rm(proresDir, { recursive: true, force: true }).catch(() => {});
 }
 
 console.log('export runtime checks passed');

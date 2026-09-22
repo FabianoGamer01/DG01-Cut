@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { ClaudeCodeTurnRequest, ClaudeCodeTurnStreamEvent } from '../../shared/claude-code-agent.ts';
 import { claudeCodeCommand } from './command.ts';
@@ -45,8 +45,10 @@ const DG01_SIDECAR_NAME = 'dg01-video';
 // O sidecar Python (Plano 1, github.com/FabianoGamer01/dg01-video) roda
 // como servidor MCP stdio local. Caminho absoluto do venv -- "python3"
 // solto resolveria pro Python de sistema, sem o pacote `mcp` instalado
-// (mesma licao do Plano 1, Tarefa 10).
-const DG01_SIDECAR_PYTHON = `${process.env.HOME}/dev/dg01-video/.venv/bin/python3`;
+// (mesma licao do Plano 1, Tarefa 10). homedir() em vez de process.env.HOME
+// porque HOME e' undefined no Windows (o resto deste arquivo ja lida com
+// Windows -- windowsVerbatimArguments, windowsHide -- abaixo).
+const DG01_SIDECAR_PYTHON = `${homedir()}/dev/dg01-video/.venv/bin/python3`;
 export const ALLOWED_TOOLS = `mcp__${MCP_SERVER_NAME}__* mcp__${DG01_SIDECAR_NAME}__*`;
 /**
  * The only tools this turn may use are the editor's own MCP tools. Everything
