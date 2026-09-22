@@ -87,8 +87,16 @@ fim. Toda decisão abaixo se subordina a isso.
    continuar. Nunca pule este passo achando que "já terminou" — é
    exatamente o erro que esta verificação existe pra pegar.
 
-10. **Fechar a sessão** com `review_edit_session`, resumo curto do que
-    foi feito.
+10. **Fechar a sessão** com `review_edit_session`. O campo `summary` do
+    schema real é documentado como "short" — não force uma justificativa
+    por momento nele. Em troca, agrupe por padrão de decisão concreto
+    (ex: "cortados 4 momentos de replay repetido; mantido o gancho pela
+    reação de susto genuína; card no clutch final") em vez de uma frase
+    genérica ("editado conforme diretrizes"). Justificativa por momento
+    individual (o "motivo" que o `director.py` original produzia por
+    beat) não tem campo equivalente nesta ferramenta — se granularidade
+    assim for importante, é uma lacuna real a resolver fora desta Skill,
+    não algo pra forçar dentro de `summary`.
 
 ## Rules
 
@@ -112,6 +120,15 @@ perdem o público.
 discreto (`transform`/`keyframes` via `edit_item updates` — lembre que
 `x`/`y` são % do canvas, não normalizado 0..1) ou um texto curto.
 
+**Ajuste a densidade à força do material.** Esse intervalo de 30-60s não
+é fixo — olhe pros scores que `gerar_momentos` devolveu. Se o material
+veio fraco (poucos momentos acima da nota mínima, `barra` caiu bastante
+do `nota_minima` pedido), compense com MAIS elementos editoriais (SFX,
+texto, punch-in mais frequente) pra sustentar o ritmo. Se o material veio
+forte (muitos momentos claramente acima da nota mínima), use MENOS
+enfeite — deixe o conteúdo falar; ênfase demais em cima de conteúdo já
+forte cansa em vez de ajudar.
+
 **Punch-in** esconde um corte ou sublinha uma reação. Use pouco. Foco na
 webcam quando a reação dele é o assunto; foco na ação quando o jogo é.
 Quando o punch-in esconde um corte (não quando só sublinha reação), um
@@ -132,14 +149,22 @@ falha alto se o id não existir, é assim de propósito (não confiar num
 id que "parece certo"). Um "pop" numa revelação ou "whoosh" numa
 transição mudam a percepção de ritmo do trecho inteiro. "whoosh" vale
 pra QUALQUER corte de assunto ou cena, não só o punch-in — troca de
-tópico, fim de explicação, início de outro momento.
+tópico, fim de explicação, início de outro momento. Prefira som a meme
+como primeira opção de ênfase: som não cansa o olho, não cobre a tela e
+não tem risco de direitos autorais — meme é o recurso mais caro dos
+três, use-o só quando o momento realmente pede um selo visual.
 
 **Música** é trilha de fundo CONTÍNUA sob um trecho inteiro (não um
 blip) — resolva via `mcp__dg01-video__resolver_musica`, mesmo cuidado de
 nunca inventar id. Use pra sustentar tensão, mistério ou humor num
 momento que já é forte e se beneficia de clima — NUNCA pra disfarçar um
 momento fraco (isso é papel do corte, não da trilha). Use com moderação:
-trilha o tempo todo cansa tanto quanto legenda o tempo todo.
+trilha o tempo todo cansa tanto quanto legenda o tempo todo. O clipe de
+música pode cobrir o momento inteiro sem se preocupar em "abrir espaço"
+pra fala: o fork tem ducking real por papel de faixa
+(`audioRouting.duckDepthDb`, faixa "anchor" de voz abaixa a faixa
+"follower" de música) — confirme que a faixa de música do projeto está
+configurada como follower antes de assumir que o ducking está ativo.
 
 **Texto** é grafismo, não legenda: no máximo 5 palavras, caixa alta, só
 no momento que merece.
@@ -147,7 +172,13 @@ no momento que merece.
 **Card** (painel HUD animado) revela um fato impactante, uma
 estatística, ou marca uma virada ("PRIMEIRO CLUTCH", "RECORDE
 PESSOAL"). Use com menos frequência que texto simples — é mais pesado
-visualmente.
+visualmente. Autore via `create_motion_graphic_from_code`, igual à
+abertura. A skill `create-motion-graphics` deste fork desencoraja por
+padrão painéis/cartões flutuantes ("Do not default to card-shaped
+overlays") — o card do diretor é a exceção sancionada dessa regra
+default: é exatamente o caso de "bounded reading surface... truly
+needed" que a própria regra abre espaço pra, então não hesite em usá-lo
+quando o momento pedir, mas sem exagerar na frequência.
 
 **Convenção por gênero** — ver `references/generos.md` pra detalhe
 completo antes de editar. Resumo: em terror, o silêncio ANTES do susto
