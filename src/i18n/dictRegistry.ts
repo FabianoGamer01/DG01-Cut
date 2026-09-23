@@ -1,5 +1,5 @@
-// The four locale dictionaries are ~560 kB of source. Importing them statically
-// put all four in the entry chunk, so every user downloaded and parsed three
+// The five locale dictionaries are ~700 kB of source. Importing them statically
+// put all five in the entry chunk, so every user downloaded and parsed four
 // languages they cannot read before the first frame. Each locale is fetched on
 // demand instead.
 //
@@ -50,6 +50,13 @@ async function fetchDicts(locale: Locale): Promise<LocaleDicts> {
       import('./dict/ru'), import('./dict/en/templates-data'),
     ]);
     return { ui: ru.RU, uiFallback: EMPTY, data: enData.default, dataFallback: EMPTY };
+  }
+  if (locale === 'pt') {
+    const [pt, ptData, en, enData] = await Promise.all([
+      import('./dict/pt'), import('./dict/pt/templates-data'),
+      import('./dict/en'), import('./dict/en/templates-data'),
+    ]);
+    return { ui: pt.PT, uiFallback: en.EN, data: ptData.default, dataFallback: enData.default };
   }
   const [it, itData, en, enData] = await Promise.all([
     import('./dict/it'), import('./dict/it/templates-data'),

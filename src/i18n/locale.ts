@@ -10,9 +10,9 @@ import { ensureLocaleDict, localeDictReady, localeDicts } from './dictRegistry';
 
 export { ensureLocaleDict } from './dictRegistry';
 
-export type Locale = 'zh' | 'en' | 'it' | 'ru';
+export type Locale = 'zh' | 'en' | 'it' | 'ru' | 'pt';
 
-export const ALL_LOCALES: readonly Locale[] = ['zh', 'en', 'it', 'ru'];
+export const ALL_LOCALES: readonly Locale[] = ['zh', 'en', 'it', 'ru', 'pt'];
 
 const STORAGE_KEY = 'cc.locale';
 const DOCUMENT_LANG: Record<Locale, string> = {
@@ -20,6 +20,7 @@ const DOCUMENT_LANG: Record<Locale, string> = {
   en: 'en',
   it: 'it',
   ru: 'ru',
+  pt: 'pt-BR',
 };
 
 function systemLocale(): Locale {
@@ -28,6 +29,7 @@ function systemLocale(): Locale {
     if (tag.startsWith('zh')) return 'zh';
     if (tag.startsWith('it')) return 'it';
     if (tag.startsWith('ru')) return 'ru';
+    if (tag.startsWith('pt')) return 'pt';
     return 'en';
   } catch {
     return 'en';
@@ -37,7 +39,7 @@ function systemLocale(): Locale {
 function readInitial(): Locale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'zh' || stored === 'en' || stored === 'it' || stored === 'ru') return stored;
+    if (stored === 'zh' || stored === 'en' || stored === 'it' || stored === 'ru' || stored === 'pt') return stored;
   } catch {
     // Private mode / storage disabled → system language below.
   }
@@ -58,10 +60,11 @@ export function subscribeLocale(onChange: () => void): () => void {
   return () => { subscribers.delete(onChange); };
 }
 
-export function localeLanguageName(locale: Locale): 'Chinese' | 'English' | 'Italian' | 'Russian' {
+export function localeLanguageName(locale: Locale): 'Chinese' | 'English' | 'Italian' | 'Russian' | 'Portuguese' {
   if (locale === 'zh') return 'Chinese';
   if (locale === 'it') return 'Italian';
   if (locale === 'ru') return 'Russian';
+  if (locale === 'pt') return 'Portuguese';
   return 'English';
 }
 

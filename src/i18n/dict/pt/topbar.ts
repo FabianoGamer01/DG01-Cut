@@ -1,0 +1,20 @@
+// PT dictionary (field fragmentation, key = Chinese original text). Data files are exempt from the upper limit of row count.
+export default {
+  '切换界面语言': 'Mudar idioma da interface',
+  '返回工程列表': 'Voltar para a lista de projetos',
+  '双击重命名': 'Clique duas vezes para renomear',
+  '编辑快捷键': 'Editar atalhos de teclado',
+  '撤销': 'Desfazer',
+  '重做': 'Refazer',
+  '设计风格(品牌)': 'Estilo de design (marca)',
+  '历史版本': 'Histórico de versões',
+  '切换面板布局': 'Alternar layout dos painéis',
+  '导出 MP4': 'Exportar MP4',
+  '导出中…': 'Exportando…',
+  '导出': 'Exportar',
+  '账户': 'Conta',
+  '窗口控制': 'Controles da janela',
+  '关闭窗口': 'Fechar janela',
+  '最小化窗口': 'Minimizar janela',
+  '缩放窗口': 'Maximizar janela',
+} as Record<string, string>;

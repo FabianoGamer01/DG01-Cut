@@ -1,0 +1,18 @@
+export default {
+  '审阅评论': 'Comentários de revisão',
+  '评论': 'Comentários',
+  '评论加载失败': 'Falha ao carregar comentários',
+  '评论保存失败': 'Falha ao salvar comentário',
+  '回复保存失败': 'Falha ao salvar resposta',
+  '在当前帧添加审阅评论': 'Adicionar comentário de revisão no frame atual',
+  '绑定当前帧；可用时同时记录片段与源位置': 'Ancora neste frame e, quando disponível, também registra o clipe e a posição de origem',
+  '添加评论': 'Adicionar comentário',
+  '还没有审阅评论': 'Ainda não há comentários de revisão',
+  '片段': 'Clipe',
+  '时间线': 'Linha do tempo',
+  '输入回复': 'Escrever resposta',
+  '回复': 'Responder',
+  '重新打开': 'Reabrir',
+  '解决': 'Resolver',
+  '删除评论': 'Excluir comentário',
+} satisfies Record<string, string>;

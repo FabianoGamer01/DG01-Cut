@@ -1,0 +1,28 @@
+// PT data dictionary: Portuguese display name of Chinese key **data** (self-made template name, etc.). tData() looks here in pt state.
+// It has nothing to do with UI fragmentation (assembled by index.ts) - the data name is not the UI copy and is a separate table.
+export default {
+  '竖屏·重点词弹出': 'Vertical · Palavra-chave em destaque',
+  '竖屏·大字幕条': 'Vertical · Legenda grande',
+  '竖屏·金句卡片': 'Vertical · Cartão de frase de efeito',
+  '竖屏·姓名条': 'Vertical · Barra de nome',
+  '竖屏·关注引导': 'Vertical · Chamada para seguir',
+  '竖屏·步骤条': 'Vertical · Lista de passos',
+  '竖屏·数字大字报': 'Vertical · Número grande',
+  '竖屏·章节进度': 'Vertical · Progresso do capítulo',
+  '竖屏·价格标签': 'Vertical · Etiqueta de preço',
+  '竖屏·封面大字': 'Vertical · Título de capa',
+  '竖屏·清单勾选': 'Vertical · Lista de checagem',
+  '竖屏·前后对比条': 'Vertical · Antes / Depois',
+  '竖屏·便签贴纸': 'Vertical · Adesivo de nota',
+  '竖屏·互动提示': 'Vertical · Chamada de interação',
+  '竖屏·期数角标': 'Vertical · Selo de episódio',
+  '口播·米色格纹（横）': 'Fala direta · Papel quadriculado bege (16:9)',
+  '口播·奶咖横线（横）': 'Fala direta · Papel pautado café com leite (16:9)',
+  '口播·黑板报（横）': 'Fala direta · Quadro-negro (16:9)',
+  '口播·侧栏拼贴（横）': 'Fala direta · Colagem lateral (16:9)',
+  '口播·便签五五分（竖）': 'Fala direta · Divisão com nota adesiva (9:16)',
+  '口播·点阵五五分（竖）': 'Fala direta · Divisão com grade de pontos (9:16)',
+  '口播·牛皮纸圆窗（竖）': 'Fala direta · Janela em papel kraft (9:16)',
+  '口播·羊皮纸（横）': 'Fala direta · Pergaminho (16:9)',
+  '口播·奶油拍立得（竖）': 'Fala direta · Polaroide creme (9:16)',
+} as Record<string, string>;
